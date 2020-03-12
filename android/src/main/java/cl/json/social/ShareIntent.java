@@ -11,6 +11,7 @@ import android.os.Parcelable;
 import android.text.TextUtils;
 import android.content.pm.ResolveInfo;
 import android.content.ComponentName;
+import android.text.Html;
 
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReadableArray;
@@ -112,7 +113,7 @@ public abstract class ShareIntent {
         if (ShareIntent.hasValidKey("message", options)) {
             String msg = options.getString("message");
             if (isHTML) {
-                message = HTML.fromHtml(msg);
+                message = Html.fromHtml(msg);
             } else {
                 message = msg;
             }
