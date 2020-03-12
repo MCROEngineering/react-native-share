@@ -107,9 +107,15 @@ public abstract class ShareIntent {
             this.chooserTitle = options.getString("title");
         }
 
-        String message = "";
+        boolean isHTML = options.getBoolean("isHTML");
+        Object message = "";
         if (ShareIntent.hasValidKey("message", options)) {
-            message = options.getString("message");
+            String msg = options.getString("message");
+            if (isHTML) {
+                message = HTML.fromHtml(msg);
+            } else {
+                message = msg;
+            }
         }
 
         String socialType  = "";
