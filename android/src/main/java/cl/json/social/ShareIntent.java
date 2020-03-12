@@ -93,6 +93,22 @@ public abstract class ShareIntent {
         return Intent.createChooser(prototype, "Share");
     }
 
+    public Object getProperMessage(ReadableMap options) {
+        boolean isHTML = options.getBoolean("isHTML");
+
+        Object message = "";
+        if (ShareIntent.hasValidKey("message", options)) {
+            String msg = options.getString("message");
+            if (isHTML) {
+                message = Html.fromHtml(msg);
+            } else {
+                message = msg;
+            }
+        }
+
+        return message;
+    }
+
     public void open(ReadableMap options) throws ActivityNotFoundException {
         this.options = options;
 
@@ -108,15 +124,9 @@ public abstract class ShareIntent {
             this.chooserTitle = options.getString("title");
         }
 
-        boolean isHTML = options.getBoolean("isHTML");
         Object message = "";
         if (ShareIntent.hasValidKey("message", options)) {
-            String msg = options.getString("message");
-            if (isHTML) {
-                message = Html.fromHtml(msg);
-            } else {
-                message = msg;
-            }
+            message = options.getString("message");
         }
 
         String socialType  = "";
@@ -142,11 +152,11 @@ public abstract class ShareIntent {
                 this.getIntent().putParcelableArrayListExtra(Intent.EXTRA_STREAM, uriFile);
                 this.getIntent().addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
                 if (!TextUtils.isEmpty(message)) {
-                    this.getIntent().putExtra(Intent.EXTRA_TEXT, message);
+                    this.getIntent().putExtra(Intent.EXTRA_TEXT, this.getProperMessage(options));
                 }
             } else {
                 if (!TextUtils.isEmpty(message)) {
-                    this.getIntent().putExtra(Intent.EXTRA_TEXT, message + " " + options.getArray("urls").getString(0));
+                    this.getIntent().putExtra(Intent.EXTRA_TEXT, this.getProperMessage(options) + " " + options.getArray("urls").getString(0));
                 } else {
                     this.getIntent().putExtra(Intent.EXTRA_TEXT, options.getArray("urls").getString(0));
                 }
@@ -159,17 +169,17 @@ public abstract class ShareIntent {
                 this.getIntent().putExtra(Intent.EXTRA_STREAM, uriFile);
                 this.getIntent().addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
                 if (!TextUtils.isEmpty(message)) {
-                    this.getIntent().putExtra(Intent.EXTRA_TEXT, message);
+                    this.getIntent().putExtra(Intent.EXTRA_TEXT, this.getProperMessage(options));
                 }
             } else {
                 if (!TextUtils.isEmpty(message)) {
-                    this.getIntent().putExtra(Intent.EXTRA_TEXT, message + " " + options.getString("url"));
+                    this.getIntent().putExtra(Intent.EXTRA_TEXT, this.getProperMessage(options) + " " + options.getString("url"));
                 } else {
                     this.getIntent().putExtra(Intent.EXTRA_TEXT, options.getString("url"));
                 }
             }
         } else if (!TextUtils.isEmpty(message)) {
-            this.getIntent().putExtra(Intent.EXTRA_TEXT, message);
+            this.getIntent().putExtra(Intent.EXTRA_TEXT, this.getProperMessage(options));
         }
     }
 
