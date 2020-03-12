@@ -7,6 +7,7 @@ import android.content.Intent;
 import android.content.IntentSender;
 import android.content.pm.PackageManager;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Parcelable;
 import android.text.TextUtils;
 import android.content.pm.ResolveInfo;
@@ -93,20 +94,31 @@ public abstract class ShareIntent {
         return Intent.createChooser(prototype, "Share");
     }
 
-    public Object getProperMessage(ReadableMap options) {
+    private Object getProperMessage(ReadableMap options) {
         boolean isHTML = options.getBoolean("isHTML");
 
         Object message = "";
         if (ShareIntent.hasValidKey("message", options)) {
             String msg = options.getString("message");
             if (isHTML) {
-                message = Html.fromHtml(msg);
+                if (Build.VERSION.SDK_INT >= 24) {
+                    message = Html.fromHtml(msg, Html.FROM_HTML_MODE_LEGACY);
+                } else {
+                    message = Html.fromHtml(msg);
+                }
             } else {
                 message = msg;
             }
         }
 
         return message;
+    }
+
+    private void putMessageInIntent(ReadableMap options) {
+        boolean isHTML = options.getBoolean("isHTML");
+        Object message = this.getProperMessage(options);
+
+        this.getIntent().putExtra(Intent.EXTRA_TEXT, isHTML ? (CharSequence) message : (String) message);
     }
 
     public void open(ReadableMap options) throws ActivityNotFoundException {
@@ -124,7 +136,7 @@ public abstract class ShareIntent {
             this.chooserTitle = options.getString("title");
         }
 
-        Object message = "";
+        String message = "";
         if (ShareIntent.hasValidKey("message", options)) {
             message = options.getString("message");
         }
@@ -152,7 +164,7 @@ public abstract class ShareIntent {
                 this.getIntent().putParcelableArrayListExtra(Intent.EXTRA_STREAM, uriFile);
                 this.getIntent().addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
                 if (!TextUtils.isEmpty(message)) {
-                    this.getIntent().putExtra(Intent.EXTRA_TEXT, this.getProperMessage(options));
+                    this.putMessageInIntent(options);
                 }
             } else {
                 if (!TextUtils.isEmpty(message)) {
@@ -169,7 +181,7 @@ public abstract class ShareIntent {
                 this.getIntent().putExtra(Intent.EXTRA_STREAM, uriFile);
                 this.getIntent().addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
                 if (!TextUtils.isEmpty(message)) {
-                    this.getIntent().putExtra(Intent.EXTRA_TEXT, this.getProperMessage(options));
+                    this.putMessageInIntent(options);
                 }
             } else {
                 if (!TextUtils.isEmpty(message)) {
@@ -179,12 +191,12 @@ public abstract class ShareIntent {
                 }
             }
         } else if (!TextUtils.isEmpty(message)) {
-            this.getIntent().putExtra(Intent.EXTRA_TEXT, this.getProperMessage(options));
+            this.putMessageInIntent(options);
         }
     }
 
     protected ShareFile getFileShare(ReadableMap options) {
-         String filename = null;
+        String filename = null;
         if (ShareIntent.hasValidKey("filename", options)) {
             filename = options.getString("filename");
         }
@@ -266,7 +278,7 @@ public abstract class ShareIntent {
 
         if (ShareIntent.hasValidKey("excludedActivityTypes", options)) {
             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
-               chooser.putExtra(Intent.EXTRA_EXCLUDE_COMPONENTS, options.getArray("excludedActivityTypes").toString());
+                chooser.putExtra(Intent.EXTRA_EXCLUDE_COMPONENTS, options.getArray("excludedActivityTypes").toString());
                 activity.startActivityForResult(chooser, RNShareModule.SHARE_REQUEST_CODE);
             }else {
                 activity.startActivityForResult(excludeChooserIntent(this.getIntent(),options), RNShareModule.SHARE_REQUEST_CODE);
